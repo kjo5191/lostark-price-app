@@ -1,15 +1,18 @@
 # data_loader.py
 
+import os
 import pandas as pd
 from sqlalchemy import create_engine
+from dotenv import load_dotenv
 import streamlit as st
 
-DB_HOST = "projectl-db.cpusekkcm87u.ap-northeast-2.rds.amazonaws.com"
-DB_PORT = 3306
-DB_USER = "admin"
-DB_PASSWORD = "rjqnr0824**"  # ⚠ 실제로는 환경변수나 .env 로 빼는게 좋음
-DB_NAME = "projectl"
+load_dotenv()
 
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = int(os.getenv("DB_PORT", 3306))
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_NAME = os.getenv("DB_NAME")
 
 @st.cache_resource
 def get_engine():
