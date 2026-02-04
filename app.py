@@ -158,11 +158,46 @@ future_df = res["future_df"]
 zoom_n = days_to_show * 144
 
 st.subheader(f"🎯 분석 대상: {top_item}")
+
+# -----------------------------
+# 현재 가격 & 전일 평균 가격
+# -----------------------------
+# 1) 가장 최근 시점(현재 가격)
+latest_ts = df_target["date"].max()
+latest_row = df_target.loc[df_target["date"] == latest_ts].iloc[-1]
+current_price = float(latest_row["price"])
+
+# 2) 전일 평균 가격 계산
+#    - 현재 시점 날짜의 전날 0시 ~ 당일 0시 직전
+current_day_start = latest_ts.normalize()  # 당일 00:00
+prev_day_start = current_day_start - pd.Timedelta(days=1)
+prev_day_end = current_day_start          # 전날 23:59:59까지
+
+mask_prev = (df_target["date"] >= prev_day_start) & (df_target["date"] < prev_day_end)
+df_prev = df_target.loc[mask_prev]
+
+if not df_prev.empty:
+	yesterday_avg_price = float(df_prev["price"].mean())
+	yesterday_text = f"{yesterday_avg_price:,.0f} G"
+else:
+	yesterday_avg_price = None
+	yesterday_text = "데이터 없음"
+
+price_col1, price_col2 = st.columns(2)
+with price_col1:
+	st.metric("현재 가격", f"{current_price:,.0f} G")
+with price_col2:
+	st.metric("전일 평균 가격", yesterday_text)
+
+# -----------------------------
+# 모델 성능 지표
+# -----------------------------
 col1, col2 = st.columns(2)
 with col1:
 	st.metric("RMSE (골드)", f"{rmse:,.2f}")
 with col2:
 	st.metric("R²", f"{r2:.3f}")
+
 
 # -------------------------------------------------------------------------
 # 5. 시각화 1: 테스트 구간 확대
