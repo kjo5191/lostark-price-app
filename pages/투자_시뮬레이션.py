@@ -1,4 +1,4 @@
-# pages/02_투자자_시뮬레이션.py
+# pages/투자_시뮬레이션.py
 
 import streamlit as st
 import pandas as pd
@@ -9,11 +9,11 @@ from models import train_random_forest
 from backtest import simulate_strict_investor
 
 st.set_page_config(
-	page_title="투자자 시뮬레이션",
+	page_title="투자 시뮬레이션",
 	layout="wide"
 )
 
-st.title("💼 투자자 시뮬레이션 (백테스트)")
+st.title("💼 투자 시뮬레이션 (백테스트)")
 
 
 # -------------------------------------------------------------------------

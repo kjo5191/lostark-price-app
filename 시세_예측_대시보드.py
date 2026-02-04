@@ -1,4 +1,4 @@
-# app.py
+# 시세_예측_대시보드.py
 
 import streamlit as st
 import matplotlib.pyplot as plt
@@ -60,39 +60,39 @@ with st.sidebar:
 		
 		run_button = st.form_submit_button("RandomForest 학습 & 예측 실행")
 
-	st.sidebar.subheader("🧪 투자자 시뮬레이션")
+	# st.sidebar.subheader("🧪 투자자 시뮬레이션")
 
-	enable_investor_mode = st.sidebar.checkbox("깐깐한 투자자 시뮬레이션", value=False)
+	# enable_investor_mode = st.sidebar.checkbox("깐깐한 투자자 시뮬레이션", value=False)
 
-	initial_balance = st.sidebar.number_input(
-		"초기 투자금 (G)",
-		min_value=1_000_000,
-		max_value=100_000_000,
-		value=10_000_000,
-		step=1_000_000,
-	)
+	# initial_balance = st.sidebar.number_input(
+	# 	"초기 투자금 (G)",
+	# 	min_value=1_000_000,
+	# 	max_value=100_000_000,
+	# 	value=10_000_000,
+	# 	step=1_000_000,
+	# )
 
-	max_inventory = st.sidebar.slider(
-		"최대 보유 개수",
-		min_value=1,
-		max_value=20,
-		value=5,
-	)
+	# max_inventory = st.sidebar.slider(
+	# 	"최대 보유 개수",
+	# 	min_value=1,
+	# 	max_value=20,
+	# 	value=5,
+	# )
 
-	target_margin = st.sidebar.slider(
-		"매수 기준 기대 수익률 (%)",
-		min_value=1,
-		max_value=30,
-		value=10,
-	) / 100.0
+	# target_margin = st.sidebar.slider(
+	# 	"매수 기준 기대 수익률 (%)",
+	# 	min_value=1,
+	# 	max_value=30,
+	# 	value=10,
+	# ) / 100.0
 
-	fee_rate = st.sidebar.slider(
-		"거래 수수료율 (%)",
-		min_value=0.0,
-		max_value=10.0,
-		value=5.0,
-		step=0.5,
-	) / 100.0
+	# fee_rate = st.sidebar.slider(
+	# 	"거래 수수료율 (%)",
+	# 	min_value=0.0,
+	# 	max_value=10.0,
+	# 	value=5.0,
+	# 	step=0.5,
+	# ) / 100.0
 
 
 # -------------------------------------------------------------------------
@@ -200,19 +200,19 @@ with col2:
 
 
 # -----------------------------------------------------------------
-# 투자자 시뮬레이션 페이지로 이동 링크
+# 투자 시뮬레이션 페이지로 이동 링크
 # -----------------------------------------------------------------
-st.markdown("### 💼 투자자 시뮬레이션")
+st.markdown("### 💼 투자 시뮬레이션")
 
 st.caption(
 	"현재 분석한 아이템과 동일한 데이터로 백테스트를 돌려보고 싶다면, "
-	"아래 버튼을 눌러 투자자 시뮬레이션 페이지로 이동하세요."
+	"아래 버튼을 눌러 투자 시뮬레이션 페이지로 이동하세요."
 )
 
 # Streamlit 멀티페이지용 내비게이션 링크
 st.page_link(
-	"pages/02_투자자_시뮬레이션.py",  # 투자자 모드 페이지 파일 경로
-	label="투자자 시뮬레이션 페이지 열기",
+	"pages/투자_시뮬레이션.py",  # 투자 모드 페이지 파일 경로
+	label="투자 시뮬레이션 페이지 열기",
 	icon="➡️",
 )
 
