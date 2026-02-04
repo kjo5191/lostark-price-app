@@ -37,38 +37,61 @@ with st.sidebar:
 		use_session = False
 		st.caption("⚠ 메인 페이지에서 먼저 한 번 학습을 돌리면, 그 결과를 재사용할 수 있어요.")
 
-	# 공통 투자 파라미터
+	# 기준 자산 (표시용 + 비율 계산용)
 	initial_balance = st.number_input(
 		"초기 투자금 (G)",
 		min_value=1_000_000,
 		max_value=100_000_000,
 		value=10_000_000,
 		step=1_000_000,
+		help="비율 기준이 되는 자산입니다. 비율 기반 전략이라 아이템 간 비교에 유리합니다.",
 	)
 
-	max_inventory = st.slider(
-		"최대 보유 개수",
-		min_value=1,
-		max_value=20,
-		value=5,
+	# 🔥 비율 기반 파라미터
+	per_trade_ratio = (
+		st.slider(
+			"1회 매수 비율 (%)",
+			min_value=1,
+			max_value=50,
+			value=5,
+			help="한 번 매수할 때 전체 자산의 몇 %를 사용할지 설정합니다.",
+		)
+		/ 100.0
 	)
 
-	target_margin = st.slider(
-		"매수 기준 기대 수익률 (%)",
-		min_value=1,
-		max_value=30,
-		value=10,
-	) / 100.0
+	max_position_ratio = (
+		st.slider(
+			"최대 투자 비율 (%)",
+			min_value=5,
+			max_value=100,
+			value=30,
+			help="한 아이템에 최대 몇 %까지 투자할지 설정합니다.",
+		)
+		/ 100.0
+	)
 
-	fee_rate = st.slider(
-		"거래 수수료율 (%)",
-		min_value=0.0,
-		max_value=10.0,
-		value=5.0,
-		step=0.5,
-	) / 100.0
+	target_margin = (
+		st.slider(
+			"매수 기준 기대 수익률 (%)",
+			min_value=1,
+			max_value=30,
+			value=10,
+			help="예측가가 현재가보다 몇 % 이상 높을 때만 매수할지 기준을 정합니다.",
+		)
+		/ 100.0
+	)
 
-	# 세션 재사용 시에는 아이템 선택 스킵, 아니라면 선택 UI 표시
+	fee_rate = (
+		st.slider(
+			"거래 수수료율 (%)",
+			min_value=0.0,
+			max_value=10.0,
+			value=5.0,
+			step=0.5,
+		)
+		/ 100.0
+	)
+
 	if not use_session:
 		st.markdown("---")
 		st.subheader("아이템 선택")
@@ -81,15 +104,16 @@ with st.sidebar:
 		target_grade = st.selectbox(
 			"아이템 등급",
 			grade_options,
-			index=grade_options.index("유물") if "유물" in grade_options else 0
+			index=grade_options.index("유물") if "유물" in grade_options else 0,
 		)
 
 		target_keyword = st.text_input(
 			"아이템 이름 키워드",
-			value="원한"
+			value="원한",
 		)
 
 	run_button = st.button("시뮬레이션 실행")
+
 
 
 # -------------------------------------------------------------------------
@@ -121,9 +145,11 @@ if use_session and has_session_result:
 			y_pred=y_pred,
 			initial_balance=initial_balance,
 			fee_rate=fee_rate,
-			max_inventory=max_inventory,
+			per_trade_ratio=per_trade_ratio,
+			max_position_ratio=max_position_ratio,
 			target_margin=target_margin,
 		)
+
 
 # -------------------------------------------------------------------------
 # 2-B. 세션이 없거나, 강제로 다시 학습하는 경우 (느린 모드)
@@ -158,7 +184,8 @@ else:
 			y_pred=y_pred,
 			initial_balance=initial_balance,
 			fee_rate=fee_rate,
-			max_inventory=max_inventory,
+			per_trade_ratio=per_trade_ratio,
+			max_position_ratio=max_position_ratio,
 			target_margin=target_margin,
 		)
 
