@@ -56,8 +56,17 @@ with st.sidebar:
 			step=1
 		)
 		POINTS_PER_DAY = 144  # 10분 단위 기준
-		
 		zoom_n = days_to_show * POINTS_PER_DAY
+
+		model_key = st.selectbox(
+			"모델 선택",
+			["rf", "lgbm", "lstm"],
+			format_func=lambda k: {
+				"rf": "RandomForest",
+				"lgbm": "LightGBM",
+				"lstm": "LSTM",
+			}[k],
+		)
 		
 		run_button = st.form_submit_button("학습 & 예측 실행")
 
@@ -87,15 +96,15 @@ if run_button:
 				# future_steps = 144
 				# future_df = forecast_future(model, df_ml, features, steps=future_steps)
 
-				model_key = st.sidebar.selectbox(
-					"모델 선택",
-					["rf", "lgbm", "lstm"],
-					format_func=lambda k: {
-						"rf": "RandomForest",
-						"lgbm": "LightGBM",
-						"lstm": "LSTM",
-					}[k],
-				)
+				# model_key = st.sidebar.selectbox(
+				# 	"모델 선택",
+				# 	["rf", "lgbm", "lstm"],
+				# 	format_func=lambda k: {
+				# 		"rf": "RandomForest",
+				# 		"lgbm": "LightGBM",
+				# 		"lstm": "LSTM",
+				# 	}[k],
+				# )
 				price_model = get_model(model_key)
 				price_model.train(df_ml, features)
 
@@ -208,7 +217,10 @@ st.page_link(
 # -------------------------------------------------------------------------
 st.markdown("### 📈 최근 테스트 구간 확대 그래프 (인터랙티브)")
 
-test_dates = df_ml["date"].iloc[split_idx:]
+# test_dates = df_ml["date"].iloc[split_idx:]
+# y_test 길이에 맞춰서 뒤에서 N개 날짜만 사용
+test_dates = df_ml["date"].iloc[-len(y_test):]
+
 
 if zoom_n > len(test_dates):
 	zoom_n = len(test_dates)

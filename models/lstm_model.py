@@ -95,7 +95,9 @@ class LSTMPriceModel(BasePriceModel):
 		test_dates_seq = date_seq[split_idx_seq:]
 
 		# 원본 df 기준 split index (window offset 고려)
-		self.split_idx = window_size + split_idx_seq
+		# self.split_idx = window_size + split_idx_seq
+		self.split_idx = len(df) - len(y_test_real)
+
 
 		# 5. LSTM 모델 정의
 		timesteps = X_train_seq.shape[1]
@@ -141,8 +143,8 @@ class LSTMPriceModel(BasePriceModel):
 		rmse_lstm = np.sqrt(mean_squared_error(y_test_real, y_pred_lstm))
 		r2_lstm = r2_score(y_test_real, y_pred_lstm)
 
-		self.y_test = y_test_real
-		self.y_pred = y_pred_lstm
+		self.y_test = pd.Series(y_test_real)
+		self.y_pred = pd.Series(y_pred_lstm)
 		self.rmse = rmse_lstm
 		self.r2 = r2_lstm
 
