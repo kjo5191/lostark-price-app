@@ -5,7 +5,8 @@ import pandas as pd
 
 from data_loader import load_merged_data
 from features import filter_item, make_ml_dataset
-from models import train_random_forest
+# from models_old import train_random_forest
+from models.factory import get_model
 from backtest import simulate_strict_investor
 
 st.set_page_config(
@@ -172,8 +173,14 @@ else:
 		st.warning(f"Feature 생성 후 데이터가 {len(df_ml)}개입니다. (최소 300개 이상일 때가 더 안정적)")
 		st.stop()
 
-	with st.spinner("RandomForest 학습 & 예측 중..."):
-		model, y_test, y_pred, split_idx, rmse, r2 = train_random_forest(df_ml, features)
+	# with st.spinner("RandomForest 학습 & 예측 중..."):
+	# 	model, y_test, y_pred, split_idx, rmse, r2 = train_random_forest(df_ml, features)
+
+	with st.spinner("모델 학습 & 예측 중..."):
+		price_model = get_model("rf")  # 나중에 "ensemble", "lstm" 등으로 교체만 하면 됨
+		price_model.train(df_ml, features)
+
+		y_test, y_pred, split_idx, rmse, r2 = price_model.predict_test()
 
 	test_dates = df_ml["date"].iloc[split_idx:]
 

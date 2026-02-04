@@ -7,7 +7,8 @@ import altair as alt
 
 from data_loader import load_merged_data
 from features import filter_item, make_ml_dataset
-from models import train_random_forest, forecast_future
+# from models_old import train_random_forest, forecast_future
+from models.factory import get_model
 from backtest import simulate_strict_investor
 
 # -------------------------------------------------------------------------
@@ -58,8 +59,9 @@ with st.sidebar:
 		
 		zoom_n = days_to_show * POINTS_PER_DAY
 		
-		run_button = st.form_submit_button("RandomForest 학습 & 예측 실행")
+		run_button = st.form_submit_button("학습 & 예측 실행")
 
+	# 페이지 분리 하면서 주석처리함.
 	# st.sidebar.subheader("🧪 투자자 시뮬레이션")
 
 	# enable_investor_mode = st.sidebar.checkbox("깐깐한 투자자 시뮬레이션", value=False)
@@ -113,12 +115,18 @@ if run_button:
 		if len(df_ml) < 300:
 			st.warning(f"Feature 생성 후 데이터가 {len(df_ml)}개입니다. (최소 300개 이상일 때가 더 안정적)")
 		else:
-			with st.spinner("RandomForest 학습 및 예측 중..."):
-				model, y_test, y_pred, split_idx, rmse, r2 = train_random_forest(df_ml, features)
+			with st.spinner("학습 및 예측 중..."):
+				# model, y_test, y_pred, split_idx, rmse, r2 = train_random_forest(df_ml, features)
 
-				# 🔮 미래 예측 (예: 1일 = 144 스텝)
-				future_steps = 144
-				future_df = forecast_future(model, df_ml, features, steps=future_steps)
+				# # 🔮 미래 예측 (예: 1일 = 144 스텝)
+				# future_steps = 144
+				# future_df = forecast_future(model, df_ml, features, steps=future_steps)
+
+				price_model = get_model("rf")	# 나중에 "ensemble" 로만 바꾸면 됨
+				price_model.train(df_ml, features)
+
+				y_test, y_pred, split_idx, rmse, r2 = price_model.predict_test()
+				future_df = price_model.predict_future(steps=144)
 
 			st.session_state.rf_result = {
 				"df_target": df_target,
@@ -137,7 +145,7 @@ if run_button:
 # 3. 세션에 결과 없으면 안내 후 종료
 # -------------------------------------------------------------------------
 if st.session_state.rf_result is None:
-	st.info("왼쪽에서 등급/키워드 설정 후 **[RandomForest 학습 & 예측 실행]** 버튼 또는 Enter 를 눌러줘.")
+	st.info("왼쪽에서 등급/키워드 설정 후 **[학습 & 예측 실행]** 버튼 또는 Enter 를 눌러줘.")
 	st.stop()
 
 # -------------------------------------------------------------------------
@@ -260,7 +268,7 @@ chart = (
 		],
 	)
 	.properties(
-		title=f"[{top_item}] 최근 {days_to_show}일 시세 예측 (RandomForest)"
+		title=f"[{top_item}] 최근 {days_to_show}일 시세 예측"
 	)
 	.interactive()
 )
@@ -357,7 +365,7 @@ rule = (
 chart_all = (
 	(rect + lines + rule)
 	.properties(
-		title=f"[{top_item}] 전체 시세 & 수요일(Reset) 영향 분석 (RandomForest)",
+		title=f"[{top_item}] 전체 시세 & 수요일(Reset) 영향 분석",
 		height=400
 	)
 	.interactive()
@@ -402,7 +410,7 @@ chart_future = (
 		],
 	)
 	.properties(
-		title=f"[{top_item}] 최근 {days_to_show}일 + 향후 1일 시세 예측 (RandomForest)"
+		title=f"[{top_item}] 최근 {days_to_show}일 + 향후 1일 시세 예측"
 	)
 	.interactive()
 )
