@@ -19,7 +19,8 @@ from preprocess import apply_gpt_scores, clean_outliers_rolling, resample_to_30m
 # -------------------------------------------------------------------------
 TIME_STEP_MINUTES = 30
 POINTS_PER_DAY = int(24 * 60 / TIME_STEP_MINUTES)  # 48
-
+FORECAST_DAYS = 3
+FORECAST_STEPS = FORECAST_DAYS * POINTS_PER_DAY    # 144
 
 # -------------------------------------------------------------------------
 # 0. 페이지 설정 & 세션 초기화
@@ -163,7 +164,7 @@ if run_button:
 
 				y_test, y_pred, split_idx, rmse, r2 = price_model.predict_test()
 				try:
-					future_df = price_model.predict_future(steps=POINTS_PER_DAY)
+					future_df = price_model.predict_future(steps=FORECAST_STEPS)
 				except NotImplementedError:
 					future_df = None
 
@@ -433,7 +434,7 @@ st.altair_chart(chart_all, use_container_width=True)
 # -------------------------------------------------------------------------
 # 7. 시각화 3: 히스토리 + 미래 예측
 # -------------------------------------------------------------------------
-st.markdown("### 🔮 향후 1일 시세 예측 (히스토리 + 미래)")
+st.markdown("### 🔮 향후 3일 시세 예측 (히스토리 + 미래)")
 
 if future_df is None or future_df.empty:
 	st.info("현재 선택한 모델에서는 미래 예측(predict_future)이 구현되지 않았습니다.")

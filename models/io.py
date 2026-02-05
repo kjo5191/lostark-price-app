@@ -47,9 +47,16 @@ def _model_filename(model_key: str, item_id: Optional[int] = None) -> Path:
 def save_model(model_key: str, item_id: Optional[int], price_model) -> Path:
 	"""
 	RF / LGBM / LSTM PriceModel 인스턴스를 그대로 joblib으로 저장.
-	(LSTM은 Keras 버전/환경에 따라 pickle 문제가 날 수 있음 → 안 되면 LSTM만 예외 처리)
+	NeuralProphet(np)는 매번 다시 학습하도록 디스크에 저장하지 않는다. (저장한거 불러오는게 메모리 에러남)
 	"""
 	path = _model_filename(model_key, item_id)
+
+	# 🔹 NeuralProphet은 항상 새로 학습 → 저장 스킵
+	if model_key == "np":
+		# 필요하면 디버깅용 로그만 남겨도 됨
+		# print(f"[INFO] NeuralProphet 모델은 디스크에 저장하지 않습니다: {path}")
+		return path
+
 	joblib.dump(price_model, path)
 	return path
 
@@ -57,13 +64,19 @@ def save_model(model_key: str, item_id: Optional[int], price_model) -> Path:
 def load_model(model_key: str, item_id: Optional[int]):
 	"""
 	기존에 저장된 모델을 로드. 없으면 None 반환.
+	NeuralProphet(np)는 항상 새로 학습하므로 로드하지 않는다.
 	"""
+	# 🔹 NeuralProphet은 디스크에서 로드하지 않음 → 항상 None
+	if model_key == "np":
+		return None
+
 	path = _model_filename(model_key, item_id)
 	if not path.exists():
 		return None
 
 	price_model = joblib.load(path)
 	return price_model
+
 
 
 # ---------------------------------------------------------------------
@@ -76,11 +89,33 @@ def load_or_train_model(
 	features,
 	force_retrain: bool = False,
 ):
+	# 1) 기존 모델이 있으면 우선 로드
 	if not force_retrain:
 		existing = load_model(model_key, item_id)
 		if existing is not None:
+			# 🔹 공통: 최신 데이터 프레임 / 피처 연결
+			if hasattr(existing, "df"):
+				existing.df = df_ml
+			if hasattr(existing, "features"):
+				existing.features = features
+
+			# 🔹 NeuralProphet 전용: df_np / backtest 갱신
+			#    - _build_np_df, _compute_backtest_metrics 는 우리가 앞에서 구현한 메서드
+			if hasattr(existing, "_build_np_df"):
+				try:
+					existing.df_np = existing._build_np_df(df_ml)
+
+					# split 기준도 새 길이에 맞춰서 다시 설정
+					if hasattr(existing, "_compute_backtest_metrics"):
+						n_np = len(existing.df_np)
+						existing.split_idx = int(n_np * 0.8)
+						existing._compute_backtest_metrics()
+				except Exception as e:
+					print(f"[WARN] NeuralProphet df_np / backtest 갱신 실패: {e}")
+
 			return existing, "loaded"
 
+	# 2) 기존 모델이 없거나 강제 재학습이면 새로 학습
 	price_model = get_model(model_key)
 	price_model.train(df_ml, features)
 

@@ -97,14 +97,14 @@ class LightGBMPriceModel(BasePriceModel):
 
 	# 	return pd.DataFrame(future_rows)
 
-	def predict_future(self, steps: int, freq: str = "10T") -> pd.DataFrame:
+	def predict_future(self, steps: int, freq: str = "30T") -> pd.DataFrame:
 		"""
 		간단한 auto-regressive 방식의 미래 예측.
 
 		- self.df: 과거 ML용 데이터 (date, price, feature 포함)
 		- self.features: 모델이 사용하는 feature 컬럼 리스트
 		- steps: 앞으로 예측할 스텝 수 (10분 단위 기준 1일=144)
-		- freq: 시간 간격 (기본 10분)
+		- freq: 시간 간격 (기본 30분)
 		"""
 		if self.model is None or self.df is None or self.features is None:
 			raise ValueError("모델이 아직 학습되지 않았습니다. 먼저 train()을 호출하세요.")

@@ -191,22 +191,22 @@ class LSTMPriceModel(BasePriceModel):
 		)
 
 
-	# def predict_future(self, steps: int):
-	# 	"""
-	# 	공식적으로는 LSTM을 '백테스트/시계열 패턴 분석용'으로만 사용하고,
-	# 	미래 예측은 트리 기반 모델(RF/LightGBM)에 맡기기로 했음.
-
-	# 	※ 아래에 _predict_future_naive()로 실험용 구현은 남겨두었지만,
-	# 	   실제 앱에서는 사용하지 않고, 이 메서드는 항상 NotImplementedError를 던진다.
-	# 	"""
-	# 	raise NotImplementedError(
-	# 		"LSTM 모델은 현재 미래 예측 기능(predict_future)이 비활성화되어 있습니다.\n"
-	# 		"백테스트 및 과거 구간 예측 평가용으로만 사용하세요."
-	# 	)
-
-
-	# def predict_future_naive(self, steps: int):
 	def predict_future(self, steps: int):
+		"""
+		공식적으로는 LSTM을 '백테스트/시계열 패턴 분석용'으로만 사용하고,
+		미래 예측은 트리 기반 모델(RF/LightGBM)에 맡기기로 했음.
+
+		※ 아래에 _predict_future_naive()로 실험용 구현은 남겨두었지만,
+		   실제 앱에서는 사용하지 않고, 이 메서드는 항상 NotImplementedError를 던진다.
+		"""
+		raise NotImplementedError(
+			"LSTM 모델은 현재 미래 예측 기능(predict_future)이 비활성화되어 있습니다.\n"
+			"백테스트 및 과거 구간 예측 평가용으로만 사용하세요."
+		)
+
+
+	# def predict_future(self, steps: int):
+	def predict_future_naive(self, steps: int):		# 구현했던 기록 남겨놓는 용도. 현재 사용하지 않습니다. (개판이라)
 		"""
 		[실험용] LSTM naive roll-out 기반 미래 예측 구현.
 
