@@ -5,6 +5,16 @@ __pycache__/
 # 가상환경
 venv/
 
+# models
+*.pkl
+*.pt
+*.h5
+*.np
+
+# logs
+lightning_logs/
+trained_models/
+
 # 기타
 .env
 .DS_Store
