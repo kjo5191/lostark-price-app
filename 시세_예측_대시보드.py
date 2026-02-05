@@ -414,44 +414,48 @@ st.altair_chart(chart_all, use_container_width=True)
 # -------------------------------------------------------------------------
 st.markdown("### 🔮 향후 1일 시세 예측 (히스토리 + 미래)")
 
-# 최근 구간 히스토리 (같은 zoom_n 사용)
-hist_tail = df_ml[["date", "price"]].iloc[-zoom_n:].copy()
-hist_tail["type"] = "History"
+if future_df is None or future_df.empty:
+	st.info("현재 선택한 모델에서는 미래 예측(predict_future)이 구현되지 않았습니다.")
+else:
+	# 최근 구간 히스토리 (같은 zoom_n 사용)
+	hist_tail = df_ml[["date", "price"]].iloc[-zoom_n:].copy()
+	hist_tail["type"] = "History"
 
-future_plot = future_df.rename(columns={"price": "price"}).copy()
-future_plot["type"] = "Forecast"
+	future_plot = future_df.rename(columns={"price": "price"}).copy()
+	future_plot["type"] = "Forecast"
 
-df_future_plot = pd.concat([hist_tail, future_plot], ignore_index=True)
+	df_future_plot = pd.concat([hist_tail, future_plot], ignore_index=True)
 
-y_min_f = df_future_plot["price"].min()
-y_max_f = df_future_plot["price"].max()
-padding_f = (y_max_f - y_min_f) * 0.05
-y_domain_f = [y_min_f - padding_f, y_max_f + padding_f]
+	y_min_f = df_future_plot["price"].min()
+	y_max_f = df_future_plot["price"].max()
+	padding_f = (y_max_f - y_min_f) * 0.05
+	y_domain_f = [y_min_f - padding_f, y_max_f + padding_f]
 
-chart_future = (
-	alt.Chart(df_future_plot)
-	.mark_line()
-	.encode(
-		x=alt.X("date:T", title="시간"),
-		y=alt.Y(
-			"price:Q",
-			title="가격 (Gold)",
-			scale=alt.Scale(domain=y_domain_f)
-		),
-		color=alt.Color("type:N", title="구분"),
-		tooltip=[
-			alt.Tooltip("date:T", title="시간"),
-			alt.Tooltip("type:N", title="구분"),
-			alt.Tooltip("price:Q", title="가격"),
-		],
+	chart_future = (
+		alt.Chart(df_future_plot)
+		.mark_line()
+		.encode(
+			x=alt.X("date:T", title="시간"),
+			y=alt.Y(
+				"price:Q",
+				title="가격 (Gold)",
+				scale=alt.Scale(domain=y_domain_f)
+			),
+			color=alt.Color("type:N", title="구분"),
+			tooltip=[
+				alt.Tooltip("date:T", title="시간"),
+				alt.Tooltip("type:N", title="구분"),
+				alt.Tooltip("price:Q", title="가격"),
+			],
+		)
+		.properties(
+			title=f"[{top_item}] 최근 {days_to_show}일 + 향후 1일 시세 예측"
+		)
+		.interactive()
 	)
-	.properties(
-		title=f"[{top_item}] 최근 {days_to_show}일 + 향후 1일 시세 예측"
-	)
-	.interactive()
-)
 
-st.altair_chart(chart_future, use_container_width=True)
+	st.altair_chart(chart_future, use_container_width=True)
+
 
 # -------------------------------------------------------------------------
 # 투자자 모드

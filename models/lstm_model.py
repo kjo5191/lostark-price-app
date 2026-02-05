@@ -38,6 +38,12 @@ class LSTMPriceModel(BasePriceModel):
 		self.rmse = None
 		self.r2 = None
 
+		# 미래 예측용 부가 정보
+		self.price_feat_index = None	# features 내에서 'price' 위치
+		self.freq = None				# 시계열 간격 (예: 10분)
+		self.last_date = None			# 마지막 시점
+
+
 	def train(self, df: pd.DataFrame, features: list[str]):
 		"""
 		df: feature + price + date 를 포함한 전체 데이터프레임
@@ -46,8 +52,19 @@ class LSTMPriceModel(BasePriceModel):
 		self.df = df
 		self.features = features
 
+		# 0. LSTM 전용 feature 세트 구성
+		#    - 외부 features에는 price가 없어도 됨
+		#    - LSTM 내부 입력에는 price를 추가해서 사용
+		if "price" in features:
+			lstm_features = features
+			self.price_feat_index = features.index("price")
+		else:
+			lstm_features = features + ["price"]
+			self.price_feat_index = len(lstm_features) - 1	
+
 		# 1. raw 값 추출
-		X_raw = df[features].values			# (N, F)
+		# X_raw = df[features].values			# (N, F)
+		X_raw = df[lstm_features].values			# (N, F_lstm)
 		y_raw = df["price"].values			# (N,)
 		dates = df["date"].values			# 시각화용
 
@@ -149,6 +166,17 @@ class LSTMPriceModel(BasePriceModel):
 		self.rmse = rmse_lstm
 		self.r2 = r2_lstm
 
+		# ---- 여기부터 추가: 시계열 간격(frequency) 및 마지막 시점 저장 ----
+		dates_dt = pd.to_datetime(df["date"])
+		freq = dates_dt.diff().median()
+		# 데이터가 너무 적거나 이상하면 fallback
+		if pd.isna(freq):
+			freq = pd.Timedelta(minutes=10)
+
+		self.freq = freq
+		self.last_date = dates_dt.iloc[-1]		
+
+
 	def predict_test(self):
 		"""
 		검증 구간 예측 결과 반환
@@ -162,10 +190,92 @@ class LSTMPriceModel(BasePriceModel):
 			self.r2,
 		)
 
+
 	def predict_future(self, steps: int):
 		"""
-		LSTM의 미래 예측은 현재 구조(df_ml 기반 feature 생성)에
-		딱 맞게 설계하려면 별도의 시뮬레이션 로직이 필요해서,
-		일단은 명시적으로 미구현 처리해둠.
+		공식적으로는 LSTM을 '백테스트/시계열 패턴 분석용'으로만 사용하고,
+		미래 예측은 트리 기반 모델(RF/LightGBM)에 맡기기로 했음.
+
+		※ 아래에 _predict_future_naive()로 실험용 구현은 남겨두었지만,
+		   실제 앱에서는 사용하지 않고, 이 메서드는 항상 NotImplementedError를 던진다.
 		"""
-		raise NotImplementedError("LSTM은 아직 미래 예측 기능(predict_future)을 지원하지 않습니다.")
+		raise NotImplementedError(
+			"LSTM 모델은 현재 미래 예측 기능(predict_future)이 비활성화되어 있습니다.\n"
+			"백테스트 및 과거 구간 예측 평가용으로만 사용하세요."
+		)
+
+
+	def predict_future_naive(self, steps: int):
+		"""
+		[실험용] LSTM naive roll-out 기반 미래 예측 구현.
+
+		- 실제 앱에서는 사용하지 않는다.
+		- 추후 연구/실험용으로 사용할 수 있도록 남겨둔 코드.
+
+		※ 문제점
+		  - price만 업데이트하고 기타 feature(RSI, Bollinger 등)는 고정이라
+		    멀티스텝 예측에서 예측선이 평균값 근처로 수렴/붕괴하는 현상이 발생.
+		  - 제대로 쓰려면 step마다 feature 재계산이 필요함.
+
+		return: DataFrame(date, price)
+		"""
+		# 0. 사전 체크
+		if self.model is None or self.X_seq is None:
+			raise RuntimeError("먼저 train()을 호출해야 합니다.")
+
+		if self.price_feat_index is None:
+			# price가 feature에 포함되어 있지 않으면, 현재 로직으로는 미래 예측 불가
+			raise NotImplementedError(
+				"'price' 컬럼이 features 목록에 없어 LSTM 미래 예측을 수행할 수 없습니다."
+			)
+
+		if self.freq is None or self.last_date is None:
+			raise RuntimeError("시계열 간격(freq) 또는 last_date 정보가 없습니다. train()이 제대로 수행됐는지 확인하세요.")
+
+		# 1. 마지막 시퀀스를 복사해서 시작점으로 사용
+		#    shape: (window_size, feature_dim)
+		last_seq = self.X_seq[-1].copy()
+		window_size, feature_dim = last_seq.shape
+
+		future_scaled = []
+		future_real = []
+		future_dates = []
+
+		current_date = self.last_date
+
+		for step in range(steps):
+			# 2-1. 현재 window로 다음 시점 예측 (scaled space)
+			input_batch = last_seq.reshape(1, window_size, feature_dim)
+            # model.predict 결과: shape (1, 1)
+			next_scaled = self.model.predict(input_batch, verbose=0).flatten()[0]
+
+			# 2-2. 역스케일링해서 실제 가격 단위로 변환
+			next_real = (
+				self.scaler_y.inverse_transform(np.array([[next_scaled]]))
+				.flatten()[0]
+			)
+
+			# 2-3. 날짜 갱신
+			current_date = current_date + self.freq
+
+			future_scaled.append(next_scaled)
+			future_real.append(next_real)
+			future_dates.append(current_date)
+
+			# 2-4. window roll:
+			#      - 앞의 것 한 칸씩 땡기고
+			#      - 맨 뒤 row 를 "최근 상태"로 채운 후, price 차원만 업데이트
+			new_seq = np.roll(last_seq, shift=-1, axis=0)  # 위로 한 칸씩 당김
+			new_seq[-1] = new_seq[-2]                       # 마지막 row 를 직전 row로 복사
+			new_seq[-1, self.price_feat_index] = next_scaled  # price 차원을 새 예측값으로 교체
+
+			last_seq = new_seq
+
+		# 3. 결과 DataFrame 생성 (대시보드에서 기대하는 형태)
+		future_df = pd.DataFrame({
+			"date": future_dates,
+			"price": future_real,
+		})
+
+		return future_df
+
