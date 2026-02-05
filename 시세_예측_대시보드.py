@@ -70,11 +70,12 @@ with st.sidebar:
 
 		model_key = st.selectbox(
 			"모델 선택",
-			["rf", "lgbm", "lstm"],
+			["rf", "lgbm", "lstm", "np"],
 			format_func=lambda k: {
 				"rf": "RandomForest",
 				"lgbm": "LightGBM",
 				"lstm": "LSTM",
+				"np": "NeuralProphet",
 			}[k],
 		)
 		

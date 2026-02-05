@@ -3,12 +3,13 @@
 from .random_forest_model import RandomForestPriceModel
 from .lightgbm_model import LightGBMPriceModel
 from .lstm_model import LSTMPriceModel
+from .neuralprophet_model import NeuralProphetPriceModel
 
 _MODEL_REGISTRY = {
 	"rf": RandomForestPriceModel,
 	"lgbm": LightGBMPriceModel,
 	"lstm": LSTMPriceModel,
-	# "prophet": ProphetPriceModel,
+	"np": NeuralProphetPriceModel,
 }
 
 
