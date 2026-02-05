@@ -4,10 +4,12 @@ from .random_forest_model import RandomForestPriceModel
 from .lightgbm_model import LightGBMPriceModel
 from .lstm_model import LSTMPriceModel
 from .neuralprophet_model import NeuralProphetPriceModel
+from .xgboost_model import XGBoostPriceModel
 
 _MODEL_REGISTRY = {
 	"rf": RandomForestPriceModel,
 	"lgbm": LightGBMPriceModel,
+	"xgb": XGBoostPriceModel,
 	"lstm": LSTMPriceModel,
 	"np": NeuralProphetPriceModel,
 }

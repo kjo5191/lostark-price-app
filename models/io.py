@@ -46,7 +46,7 @@ def _model_filename(model_key: str, item_id: Optional[int] = None) -> Path:
 # ---------------------------------------------------------------------
 def save_model(model_key: str, item_id: Optional[int], price_model) -> Path:
 	"""
-	RF / LGBM / LSTM PriceModel 인스턴스를 그대로 joblib으로 저장.
+	RF / LGBM / XGB / LSTM PriceModel 인스턴스를 그대로 joblib으로 저장.
 	NeuralProphet(np)는 매번 다시 학습하도록 디스크에 저장하지 않는다. (저장한거 불러오는게 메모리 에러남)
 	"""
 	path = _model_filename(model_key, item_id)

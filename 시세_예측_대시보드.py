@@ -72,10 +72,11 @@ with st.sidebar:
 
 		model_key = st.selectbox(
 			"모델 선택",
-			["rf", "lgbm", "lstm", "np"],
+			["rf", "lgbm", "xgb", "lstm", "np"],
 			format_func=lambda k: {
 				"rf": "RandomForest",
 				"lgbm": "LightGBM",
+				"xgb": "XGBoost",
 				"lstm": "LSTM",
 				"np": "NeuralProphet",
 			}[k],
@@ -470,7 +471,7 @@ else:
 			],
 		)
 		.properties(
-			title=f"[{top_item}] 최근 {days_to_show}일 + 향후 1일 시세 예측"
+			title=f"[{top_item}] 최근 {days_to_show}일 + 향후 3일 시세 예측"
 		)
 		.interactive()
 	)

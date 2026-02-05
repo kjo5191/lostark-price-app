@@ -94,8 +94,8 @@ class RandomForestPriceModel(BasePriceModel):
 				new_row["day_of_week"] = next_time.dayofweek
 
 			# 2) lag 피처 갱신 (있을 때만)
-			if "lag_10m" in new_row.index:
-				new_row["lag_10m"] = history["price"].iloc[-1]
+			if "lag_30m" in new_row.index:
+				new_row["lag_30m"] = history["price"].iloc[-1]
 
 			if "lag_1h" in new_row.index:
 				if len(history) >= 6:
