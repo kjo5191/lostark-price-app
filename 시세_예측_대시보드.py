@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import altair as alt
+import os
+import shutil
 
 from data_loader import load_merged_data, load_gpt_scores
 from features import filter_item, make_ml_dataset
@@ -41,37 +43,74 @@ st.caption("로스트아크 거래소 아이템 시세를 앙상블 모델(Light
 # 3. 사이드바 - 검색 / 학습 범위 설정 + 검증 모델 선택
 # -------------------------------------------------------------------------
 with st.sidebar:
-	st.header("검색 / 예측 구간 설정")
+	st.header("아이템 검색")
 
-	# 3-1. 원본 데이터 & GPT 점수 로드
+	# 1) 데이터 로딩
 	df_final = load_merged_data()
 	df_gpt_all = load_gpt_scores()
 
 	grade_list = sorted(df_final["grade"].dropna().unique())
 	grade_options = ["전체"] + grade_list
 
-	# 3-2. 검색 조건 + 최근 기간은 form 안에서 처리 (Enter로 제출)
-	with st.form("search_form"):
-		target_grade = st.selectbox(
-			"아이템 등급",
-			grade_options,
-			index=grade_options.index("유물") if "유물" in grade_options else 0
+	# 2) 등급 선택
+	target_grade = st.selectbox(
+		"아이템 등급",
+		grade_options,
+		index=grade_options.index("유물") if "유물" in grade_options else 0,
+	)
+
+	# 3) 등급에 따라 아이템 후보 리스트 동적 생성
+	if target_grade == "전체":
+		item_options = sorted(df_final["name"].dropna().unique())
+	else:
+		item_options = sorted(
+			df_final.loc[df_final["grade"] == target_grade, "name"]
+			.dropna()
+			.unique()
 		)
 
-		target_keyword = st.text_input(
-			"아이템 이름 키워드",
-			value="원한"
-		)
+	if len(item_options) == 0:
+		st.warning("선택한 등급에 해당하는 아이템이 없습니다.")
+		st.stop()
 
-		days_to_show = st.slider(
-			"최근 예측 기간 (일)",
-			min_value=1,
-			max_value=14,
-			value=3,
-			step=1
-		)
+	default_item_name = "유물 원한 각인서"
 
-		run_button = st.form_submit_button("학습 & 예측 실행")
+	default_index = 0
+	if default_item_name in item_options:
+		default_index = item_options.index(default_item_name)
+
+
+	# 4) 아이템 이름 선택 (타이핑하면 자동 필터링됨)
+	target_item_name = st.selectbox(
+		"아이템 이름",
+		item_options,
+		index=default_index,
+		help="아이템 이름의 일부를 타이핑하면 자동으로 필터링됩니다.",
+	)
+
+
+	# filter_item() 에서 쓰던 변수명 유지
+	target_keyword = target_item_name
+
+	# 5) 그래프 표시 기간
+	days_to_show = st.slider(
+		"그래프 표시 기간 (일)",
+		min_value=1,
+		max_value=14,
+		value=3,
+		step=1,
+	)
+	zoom_n = days_to_show * POINTS_PER_DAY
+
+	# 🔹 Y축 범위를 전체 기간 기준으로 고정할지 여부
+	use_global_scale = st.checkbox(
+		"Y축 범위를 전체 기간으로 고정",
+		value=False,
+	)	
+
+	# 6) 실행 버튼 (폼 대신 일반 버튼)
+	# run_button = st.button("학습 & 예측 실행")
+	run_button = st.button("AI 예측 시작", type="primary", use_container_width=True)
 
 	zoom_n = days_to_show * POINTS_PER_DAY
 
@@ -81,15 +120,41 @@ with st.sidebar:
 
 	eval_model_key = st.selectbox(
 		"검증에 사용할 단일 모델",
-		["lgbm", "xgb", "rf", "lstm", "rf"],
+		["rf","lgbm", "xgb", "lstm", "np"],
 		format_func=lambda k: {
+			"rf": "RandomForest",
 			"lgbm": "LightGBM",
 			"xgb": "XGBoost",
-			"rf": "RandomForest",
 			"lstm": "LSTM",
-			"rf": "RandomForest",
+			"np": "NeuralProphet",
 		}[k],
 	)
+
+	# 🔹 관리자 설정 영역 추가
+	st.markdown("---")
+	with st.expander("⚙️ 관리자 설정"):
+		st.caption("저장된 모델 학습 결과(.pkl)와 예측 캐시를 초기화합니다.")
+
+		if st.button("모델 초기화", type="secondary", use_container_width=True):
+			model_dir = "trained_models"  # 🔥 반드시 여기
+
+			try:
+				# 1) 학습된 모델 파일만 삭제
+				if os.path.exists(model_dir):
+					shutil.rmtree(model_dir)
+
+				# 2) 빈 폴더 재생성
+				os.makedirs(model_dir, exist_ok=True)
+
+				# 3) 세션 캐시 초기화
+				st.session_state.rf_result = None
+
+				st.success(
+					"학습된 모델(.pkl)과 세션 캐시를 초기화했습니다.\n"
+					"다시 [학습 & 예측 실행]을 눌러 모델을 재학습해주세요."
+				)
+			except Exception as e:
+				st.error(f"모델 초기화 중 오류가 발생했습니다: {e}")
 
 
 # -------------------------------------------------------------------------
@@ -240,6 +305,7 @@ if run_button:
 					"xgb": "XGBoost",
 					"rf": "RandomForest",
 					"lstm": "LSTM",
+					"np": "NeuralProphet",
 				}[eval_model_key]
 
 				if eval_status == "loaded":
@@ -261,11 +327,12 @@ if run_button:
 				"split_idx": split_idx,
 				"rmse": rmse,
 				"r2": r2,
-				"days_to_show": days_to_show,
+				# "days_to_show": days_to_show,
 				"future_df_ensemble": ensemble_future_df,  # 🔥 앙상블 모델 예측 + 개별
 				"eval_model_key": eval_model_key,
 				"eval_model_name": eval_model_name,
 				"features": features,
+				# "use_global_scale": use_global_scale,
 			}
 
 
@@ -273,7 +340,7 @@ if run_button:
 # 8. 세션에 결과 없으면 안내 후 종료
 # -------------------------------------------------------------------------
 if st.session_state.rf_result is None:
-	st.info("왼쪽에서 등급/키워드 설정 후 **[학습 & 예측 실행]** 버튼 또는 Enter 를 눌러줘.")
+	st.info("아이템 등급, 이름 설정 후 **[AI 예측 시작]** 버튼을 눌러주세요.")
 	st.stop()
 
 
@@ -290,11 +357,13 @@ y_pred = res["y_pred"]
 split_idx = res["split_idx"]
 rmse = res["rmse"]
 r2 = res["r2"]
-days_to_show = res["days_to_show"]
+# days_to_show = res["days_to_show"]
 future_df_ensemble = res["future_df_ensemble"]
 eval_model_key = res["eval_model_key"]
 eval_model_name = res["eval_model_name"]
+# use_global_scale = res.get("use_global_scale", False)
 zoom_n = days_to_show * POINTS_PER_DAY
+
 
 st.subheader(f"🎯 분석 대상: {top_item}")
 
@@ -386,16 +455,44 @@ else:
 	else:
 		df_indiv = pd.DataFrame(columns=["date", "price", "type"])
 
+	# 🔹 수요일 06:00 세로선용 데이터 생성
+	# "최근 zoom_n 히스토리 구간 + 미래 예측" 범위에 대해서만 생성
+	date_start = hist_tail["date"].min()          # ✅ 최근 구간 시작 시점
+	date_end = df_ens_raw["date"].max()           # ✅ 예측 마지막 시점
+
+	wednesday_6am = (
+		pd.date_range(
+			start=date_start.normalize(),
+			end=date_end.normalize(),
+			freq="W-WED",
+		)
+		+ pd.Timedelta(hours=6)
+	)
+
+	df_wed = pd.DataFrame({"date": wednesday_6am})
+
 	# 11-3. y축 범위 계산 (히스토리 + 앙상블 + 개별 모두 포함)
 	df_main = pd.concat([hist_tail, main_future], ignore_index=True)
-	df_for_range = pd.concat([df_main, df_indiv], ignore_index=True)
+
+	if use_global_scale:
+		# 🔹 전체 기간 가격 + 미래 예측까지 포함해서 Y축 범위 계산
+		df_all_hist = df_ml[["date", "price"]].copy()
+		df_all_hist["type"] = "History (전체)"
+
+		df_for_range = pd.concat(
+			[df_all_hist, main_future, df_indiv],
+			ignore_index=True
+		)
+	else:
+		# 기존처럼: 최근 구간(hist_tail) + 앙상블 + 개별 모델 기준
+		df_for_range = pd.concat([df_main, df_indiv], ignore_index=True)
 
 	y_min_f = df_for_range["price"].min()
 	y_max_f = df_for_range["price"].max()
 	padding_f = (y_max_f - y_min_f) * 0.05
 	y_domain_f = [y_min_f - padding_f, y_max_f + padding_f]
 
-	# 11-4. Altair 레이어 구성
+	# 11-4. Altair 레이어 구성 (히스토리 + 앙상블 + 개별 + 수요일 06:00 점선)
 	base_chart = (
 		alt.Chart(df_main)
 		.mark_line()
@@ -434,8 +531,21 @@ else:
 		)
 	)
 
+	# 🔹 수요일 06:00 세로 점선 레이어
+	wed_rule = (
+		alt.Chart(df_wed)
+		.mark_rule(
+			color="orange",
+			strokeDash=[6, 6],
+			opacity=0.6,
+		)
+		.encode(
+			x="date:T"
+		)
+	)
+
 	chart_future = (
-		(base_chart + indiv_chart)
+		(base_chart + indiv_chart + wed_rule)
 		.properties(
 			title=f"[{top_item}] 최근 {days_to_show}일 + 앙상블 모델 기반 향후 {FORECAST_DAYS}일 시세 예측",
 		)

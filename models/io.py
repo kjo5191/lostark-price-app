@@ -52,10 +52,10 @@ def save_model(model_key: str, item_id: Optional[int], price_model) -> Path:
 	path = _model_filename(model_key, item_id)
 
 	# 🔹 NeuralProphet은 항상 새로 학습 → 저장 스킵
-	if model_key == "np":
-		# 필요하면 디버깅용 로그만 남겨도 됨
-		# print(f"[INFO] NeuralProphet 모델은 디스크에 저장하지 않습니다: {path}")
-		return path
+	# if model_key == "np":
+	# 	# 필요하면 디버깅용 로그만 남겨도 됨
+	# 	# print(f"[INFO] NeuralProphet 모델은 디스크에 저장하지 않습니다: {path}")
+	# 	return path
 
 	joblib.dump(price_model, path)
 	return path
