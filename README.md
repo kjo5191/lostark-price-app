@@ -26,6 +26,40 @@ streamlit run 시세_예측_대시보드.py
 5) 결과를 대시보드와 투자 시뮬레이션 페이지에 시각화한다
 
 
+## 📂 프로젝트 파일 구조
+
+이 프로젝트는 **데이터 수집 → 전처리 → 예측 모델 → 시각화 → 투자 시뮬레이션** 흐름을
+명확히 분리한 구조로 구성되어 있습니다.
+
+```text
+LOSTARK-PRICE-APP/
+├─ models/                    # 예측 모델 관련 코드
+│  ├─ base.py                 # 공통 모델 인터페이스 (BasePriceModel)
+│  ├─ factory.py              # 모델 생성 팩토리 (rf / lgbm / xgb / lstm / np)
+│  ├─ io.py                   # 모델 저장 / 로드 (joblib 기반)
+│  ├─ random_forest_model.py  # RandomForest 예측 모델
+│  ├─ lightgbm_model.py       # LightGBM 예측 모델
+│  ├─ xgboost_model.py        # XGBoost 예측 모델
+│  ├─ lstm_model.py           # LSTM 시계열 모델
+│  └─ neuralprophet_model.py  # NeuralProphet 시계열 모델
+│
+├─ pages/
+│  └─ 투자_시뮬레이션.py       # 예측 결과 기반 투자 백테스트 페이지
+│
+├─ 시세_예측_대시보드.py        # 메인 Streamlit 대시보드 (예측 중심)
+├─ data_loader.py             # DB / CSV 데이터 로딩 로직
+├─ export_demo_data.py        # DB → CSV 데모 데이터 백업 스크립트
+├─ features.py                # Feature Engineering (lag, RSI, GPT score 등)
+├─ preprocess.py              # 리샘플링, 이상치 제거 등 전처리
+├─ backtest.py                # 투자 전략 시뮬레이션 로직
+├─ notice.py                  # 공지사항 관련 처리 로직
+│
+├─ .env                       # DB 접속 정보 (Git 제외)
+├─ .gitignore                 # Git 제외 대상 정의
+├─ requirements.txt           # Python 의존성 목록
+└─ README.md                  # 프로젝트 설명 문서
+
+
 ---
 ### 1. 프로젝트 최상단 파일
 
