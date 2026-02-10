@@ -120,11 +120,11 @@ with st.sidebar:
 
 	eval_model_key = st.selectbox(
 		"검증에 사용할 단일 모델",
-		["rf","lgbm", "xgb", "lstm", "np"],
+		["lgbm", "xgb", "rf", "lstm", "np"],
 		format_func=lambda k: {
-			"rf": "RandomForest",
 			"lgbm": "LightGBM",
 			"xgb": "XGBoost",
+			"rf": "RandomForest",
 			"lstm": "LSTM",
 			"np": "NeuralProphet",
 		}[k],
@@ -228,9 +228,9 @@ if run_button:
 			with st.spinner("앙상블 모델 학습 / 로드 중..."):
 				ensemble_keys = ["lgbm", "xgb", "np"]
 				ensemble_weights = {
-					"lgbm": 5.5,
-					"xgb": 3.5,
-					"np": 1.0,
+					"lgbm": 4.0,
+					"xgb": 4.5,
+					"np": 1.5,
 				}
 
 				ensemble_models: dict[str, object] = {}
