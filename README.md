@@ -60,7 +60,6 @@ DIGITAL-ASSET-FORECASTING/
 └─ README.md                  # 프로젝트 설명 문서
 ```
 
-
 ---
 ### 1. 프로젝트 최상단 파일
 
@@ -247,6 +246,18 @@ lightning_logs/
 - 모델 추가/교체가 쉽고
 - 실험 코드와 서비스 코드가 분리되어 있으며
 - 데이터 → 전처리 → 모델 → 시각화 흐름이 명확하게 유지된다
+
+---
+
+## 🖥️ Service Preview
+
+### 1. 가격 예측 대시보드
+![dashboard](assets/screenshots/Streamlit_서비스_화면_1.png)
+![dashboard](assets/screenshots/Streamlit_서비스_화면_2.png)
+
+### 2. 투자 시뮬레이션
+![simulation](assets/screenshots/Streamlit_서비스_화면_3.png)
+![simulation](assets/screenshots/Streamlit_서비스_화면_4.png)
 
 ---
 
