@@ -1,8 +1,8 @@
 ## 로컬 실행 방법
 
 ```bash
-git clone https://github.com/kjo5191/lostark-price-app.git
-cd lostark-price-app
+git clone https://github.com/kjo5191/digital-asset-forecasting.git
+cd digital-asset-forecasting
 
 python -m venv venv
 venv\Scripts\activate
@@ -12,10 +12,10 @@ streamlit run 시세_예측_대시보드.py
 ```
 
 ---
-## 📦 LOSTARK-PRICE-APP 프로젝트 구조 설명
+## 📦 DIGITAL-ASSET-FORECASTING 프로젝트 구조 설명
 
-이 프로젝트는 로스트아크 거래소 아이템 시세를
-여러 머신러닝/시계열 모델로 예측하고,
+이 프로젝트는 디지털 자산 분석을 목표로 하는 주제로써
+하나의 예시로 로스트아크 거래소 아이템 시세를여러 머신러닝/시계열 모델로 예측한 후,
 그 결과를 Streamlit 대시보드로 시각화하는 웹 애플리케이션이다.
 
 전체 흐름은 다음과 같다.
@@ -32,7 +32,7 @@ streamlit run 시세_예측_대시보드.py
 명확히 분리한 구조로 구성되어 있습니다.
 
 ```text
-LOSTARK-PRICE-APP/
+DIGITAL-ASSET-FORECASTING/
 ├─ models/                    # 예측 모델 관련 코드
 │  ├─ base.py                 # 공통 모델 인터페이스 (BasePriceModel)
 │  ├─ factory.py              # 모델 생성 팩토리 (rf / lgbm / xgb / lstm / np)
